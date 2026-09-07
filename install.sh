@@ -143,7 +143,13 @@ if [ "$PURGE" = true ]; then
 else
   echo "Preserving runtime data and credentials. Use --purge to destroy a selected runtime first."
 fi
-rm -f "$LINK_PATH" "$HOME/.local/share/applications/knowz.desktop"
+if [ -L "$LINK_PATH" ] && [ "$(readlink "$LINK_PATH")" = "$KNOWZ_BIN" ]; then
+  rm -f "$LINK_PATH"
+fi
+DESKTOP_PATH="$HOME/.local/share/applications/knowz.desktop"
+if [ -f "$DESKTOP_PATH" ] && grep -Fqx "Exec=\"$KNOWZ_BIN\" up --ui" "$DESKTOP_PATH"; then
+  rm -f "$DESKTOP_PATH"
+fi
 rm -rf "$INSTALL_DIR"
 echo "Knowz CLI removed."
 UNINSTALL
