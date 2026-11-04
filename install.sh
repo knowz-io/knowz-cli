@@ -7,7 +7,7 @@ PREFIX=
 PREFIX_EXPLICIT=false
 
 usage() {
-  echo "Usage: install.sh [--version vX.Y.Z] [--prefix /path]" >&2
+  echo "Usage: install.sh [--version X.Y.Z] [--prefix /path]  (default: the latest published release)" >&2
 }
 
 while [ "$#" -gt 0 ]; do
@@ -69,14 +69,101 @@ case "$ARCH_NAME" in
   *) echo "Unsupported architecture: $ARCH_NAME" >&2; exit 1 ;;
 esac
 
+TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/knowz-install.XXXXXX")
+cleanup() { rm -rf "$TMP_DIR"; }
+trap cleanup EXIT HUP INT TERM
+
+is_release_version() {
+  printf '%s\n' "$1" | grep -Eq '^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
+}
+
+# Prints one "tag<TAB>draft<TAB>prerelease" line per release object in a GitHub releases list.
+# A small JSON scanner (no jq): only keys of the top-level release objects are read, so asset,
+# author and release-note text can never be mistaken for release fields.
+release_rows() {
+  awk '
+    function emit_value(v) {
+      if (key == "tag_name") tag = v
+      else if (key == "draft") draft = v
+      else if (key == "prerelease") pre = v
+      after_colon = 0
+    }
+    function end_literal() {
+      if (lit != "") { if (depth == 2 && after_colon) emit_value(lit); lit = "" }
+    }
+    BEGIN { depth = 0; in_str = 0; esc = 0; after_colon = 0; lit = "" }
+    {
+      line = $0 "\n"; n = length(line)
+      for (i = 1; i <= n; i++) {
+        c = substr(line, i, 1)
+        if (in_str) {
+          if (esc) { esc = 0; str = str c }
+          else if (c == "\\") { esc = 1; str = str c }
+          else if (c == "\"") {
+            in_str = 0
+            if (depth == 2) { if (after_colon) emit_value(str); else key = str }
+          } else str = str c
+          continue
+        }
+        if (c == "\"") { end_literal(); in_str = 1; str = ""; continue }
+        if (c == "{" || c == "[") {
+          end_literal()
+          if (depth == 1 && c == "{") { tag = ""; draft = ""; pre = ""; key = "" }
+          after_colon = 0; depth++; continue
+        }
+        if (c == "}" || c == "]") {
+          end_literal()
+          if (depth == 2 && c == "}") print tag "\t" draft "\t" pre
+          depth--; after_colon = 0; continue
+        }
+        if (c == ":") { if (depth == 2) after_colon = 1; continue }
+        if (c == ",") { end_literal(); if (depth == 2) after_colon = 0; continue }
+        if (c ~ /[ \t\r\n]/) { end_literal(); continue }
+        lit = lit c
+      }
+    }
+  '
+}
+
+# Highest v<semver> tag among non-draft releases. Scope "stable" also requires a release that is
+# not flagged prerelease and has no -suffix (the release workflow's stable rule); "any" does not.
+pick_release_tag() {
+  awk -F '\t' -v scope="$1" '
+    $2 == "false" && (scope == "any" || ($3 == "false" && index($1, "-") == 0)) && $1 ~ /^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$/ {
+      version = substr($1, 2); suffix = ""
+      dash = index(version, "-")
+      if (dash > 0) { suffix = substr(version, dash + 1); version = substr(version, 1, dash - 1) }
+      split(version, part, ".")
+      printf "%012d.%012d.%012d.%s\t%s\n", part[1], part[2], part[3], (suffix == "" ? "~" : "-" suffix), $1
+    }
+  ' | LC_ALL=C sort | tail -n 1 | cut -f 2
+}
+
+resolve_latest_version() {
+  RELEASES_JSON="$TMP_DIR/releases.json"
+  RESOLVED=
+  if curl -fsSL -H 'Accept: application/vnd.github+json' -o "$RELEASES_JSON" \
+    "https://api.github.com/repos/$REPOSITORY/releases?per_page=20" 2>/dev/null; then
+    release_rows <"$RELEASES_JSON" >"$TMP_DIR/releases.tsv"
+    RESOLVED=$(pick_release_tag stable <"$TMP_DIR/releases.tsv")
+    [ -n "$RESOLVED" ] || RESOLVED=$(pick_release_tag any <"$TMP_DIR/releases.tsv")
+  else
+    # API unavailable (for example rate-limited): fall back to the latest-release redirect.
+    LATEST_URL=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$REPOSITORY/releases/latest" 2>/dev/null) || LATEST_URL=
+    RESOLVED=${LATEST_URL##*/}
+  fi
+  if [ -z "$RESOLVED" ] || ! is_release_version "$RESOLVED"; then
+    echo "Could not resolve the latest Knowz CLI release from $REPOSITORY. Pass --version X.Y.Z (or set KNOWZ_VERSION), or use npm i -g @knowzai/cli (Node >=22)." >&2
+    exit 1
+  fi
+  VERSION=$RESOLVED
+}
+
 if [ "$VERSION" = latest ]; then
-  LATEST_URL=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$REPOSITORY/releases/latest")
-  VERSION=${LATEST_URL##*/}
+  resolve_latest_version
 fi
+is_release_version "$VERSION" || { echo "Invalid version: $VERSION (expected X.Y.Z or X.Y.Z-suffix)." >&2; exit 2; }
 VERSION=${VERSION#v}
-case "$VERSION" in
-  ''|*[!0-9A-Za-z.-]*) echo "Invalid version: $VERSION" >&2; exit 2 ;;
-esac
 
 if [ "$PREFIX_EXPLICIT" = true ]; then
   case "$PREFIX" in
@@ -98,9 +185,6 @@ fi
 
 ASSET="knowz-cli-v$VERSION-$OS-$ARCH.tar.gz"
 BASE_URL="https://github.com/$REPOSITORY/releases/download/v$VERSION"
-TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/knowz-install.XXXXXX")
-cleanup() { rm -rf "$TMP_DIR"; }
-trap cleanup EXIT HUP INT TERM
 
 curl -fsSL "$BASE_URL/$ASSET" -o "$TMP_DIR/$ASSET" || {
   echo "CLI $VERSION for $OS/$ARCH is unavailable in the configured public channel. Verify the release, or use npm i -g @knowzai/cli (Node >=22)." >&2
