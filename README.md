@@ -1,6 +1,6 @@
 # Knowz CLI
 
-`knowz` is the command-line client for Knowz. Connect to Knowz Cloud, your selfhosted instance or another compatible Knowz endpoint; work with knowledge, vaults, files and agent memory from the terminal; and start a local Knowz on your own machine with `knowz up`. This page describes CLI 0.5.6.
+`knowz` is the command-line client for Knowz. Connect to Knowz Cloud, your selfhosted instance or another compatible Knowz endpoint; work with knowledge, vaults, files and agent memory from the terminal; and start a local Knowz on your own machine with `knowz up`. This page describes CLI 0.5.7.
 
 ## Requirements
 
@@ -15,7 +15,7 @@ macOS and Linux:
 curl -fsSL https://raw.githubusercontent.com/knowz-io/knowz-cli/main/install.sh | sh
 ```
 
-This installs into `~/.knowz/cli/<version>` and links `knowz` into `~/.local/bin` (add that to your `PATH` if it is not there). Pin a version with `curl -fsSL https://raw.githubusercontent.com/knowz-io/knowz-cli/main/install.sh | sh -s -- --version 0.5.6`; use `--prefix /absolute/path` for an isolated installation.
+This installs into `~/.knowz/cli/<version>` and links `knowz` into `~/.local/bin` (add that to your `PATH` if it is not there). Pin a version with `curl -fsSL https://raw.githubusercontent.com/knowz-io/knowz-cli/main/install.sh | sh -s -- --version 0.5.7`; use `--prefix /absolute/path` for an isolated installation.
 
 Windows (PowerShell 5.1 or 7, x64):
 
@@ -23,7 +23,7 @@ Windows (PowerShell 5.1 or 7, x64):
 irm https://raw.githubusercontent.com/knowz-io/knowz-cli/main/install.ps1 | iex
 ```
 
-This installs into `%LOCALAPPDATA%\Knowz\cli\<version>` and adds `%LOCALAPPDATA%\Knowz\bin` to your user `PATH`; no administrator rights are needed. Open a new terminal afterwards. Pin a version with `& ([scriptblock]::Create((irm https://raw.githubusercontent.com/knowz-io/knowz-cli/main/install.ps1))) -Version 0.5.6`. Windows on ARM: use npm.
+This installs into `%LOCALAPPDATA%\Knowz\cli\<version>` and adds `%LOCALAPPDATA%\Knowz\bin` to your user `PATH`; no administrator rights are needed. Open a new terminal afterwards. Pin a version with `& ([scriptblock]::Create((irm https://raw.githubusercontent.com/knowz-io/knowz-cli/main/install.ps1))) -Version 0.5.7`. Windows on ARM: use npm.
 
 Both scripts select the newest release, download the archive for your platform and refuse to install anything that does not match `SHA256SUMS`.
 
@@ -54,26 +54,26 @@ Skip the question with `knowz up --edition portable` or `knowz up --edition self
 
 Native packages include Node.js. These installers are **unsigned for now**: the macOS packages are not notarized and the Windows MSI is not code-signed. The install scripts above avoid both prompts and still verify checksums. If you use an installer directly:
 
-- macOS: right-click the `.pkg` and choose **Open**, then **Open** again; or clear the download quarantine first with `xattr -d com.apple.quarantine knowz-cli-v0.5.6-darwin-arm64.pkg`.
+- macOS: right-click the `.pkg` and choose **Open**, then **Open** again; or clear the download quarantine first with `xattr -d com.apple.quarantine knowz-cli-v0.5.7-darwin-arm64.pkg`.
 - Windows: when SmartScreen shows "Windows protected your PC", choose **More info**, then **Run anyway**.
 
 | Platform | Download |
 | --- | --- |
-| Linux x64 | [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-v0.5.6-linux-x64.tar.gz) |
-| Linux ARM64 | [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-v0.5.6-linux-arm64.tar.gz) |
-| macOS Intel | [Installer](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-v0.5.6-darwin-x64.pkg) · [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-v0.5.6-darwin-x64.tar.gz) |
-| macOS Apple Silicon | [Installer](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-v0.5.6-darwin-arm64.pkg) · [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-v0.5.6-darwin-arm64.tar.gz) |
-| Windows x64 | [Installer](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-v0.5.6-win32-x64.msi) · [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-v0.5.6-win32-x64.tar.gz) |
+| Linux x64 | [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-v0.5.7-linux-x64.tar.gz) |
+| Linux ARM64 | [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-v0.5.7-linux-arm64.tar.gz) |
+| macOS Intel | [Installer](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-v0.5.7-darwin-x64.pkg) · [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-v0.5.7-darwin-x64.tar.gz) |
+| macOS Apple Silicon | [Installer](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-v0.5.7-darwin-arm64.pkg) · [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-v0.5.7-darwin-arm64.tar.gz) |
+| Windows x64 | [Installer](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-v0.5.7-win32-x64.msi) · [Archive](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-v0.5.7-win32-x64.tar.gz) |
 
 ## Verify
 
-Every asset is listed in [SHA256SUMS](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/SHA256SUMS). For example, from the download folder:
+Every asset is listed in [SHA256SUMS](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/SHA256SUMS). For example, from the download folder:
 
 ```sh
-grep 'knowz-cli-v0.5.6-darwin-arm64.pkg$' SHA256SUMS | shasum -a 256 -c -   # Linux: sha256sum -c -
+grep 'knowz-cli-v0.5.7-darwin-arm64.pkg$' SHA256SUMS | shasum -a 256 -c -   # Linux: sha256sum -c -
 ```
 
-On Windows, compare `(Get-FileHash .\knowz-cli-v0.5.6-win32-x64.msi -Algorithm SHA256).Hash` with its line in `SHA256SUMS`. [release.json](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/release.json) records exact compatibility, image digests and per-artifact signing status.
+On Windows, compare `(Get-FileHash .\knowz-cli-v0.5.7-win32-x64.msi -Algorithm SHA256).Hash` with its line in `SHA256SUMS`. [release.json](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/release.json) records exact compatibility, image digests and per-artifact signing status.
 
 ## Platform notes
 
@@ -94,7 +94,7 @@ Uninstalling keeps runtime data, credentials and profiles unless you ask to purg
 
 ## Agent skills
 
-Download the [Claude skill](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-SKILL.md) or [Codex skill](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.6/knowz-cli-codex-SKILL.md) for this CLI version. The inventory is generated from the same command manifest as the native and npm packages.
+Download the [Claude skill](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-SKILL.md) or [Codex skill](https://github.com/knowz-io/knowz-cli/releases/download/v0.5.7/knowz-cli-codex-SKILL.md) for this CLI version. The inventory is generated from the same command manifest as the native and npm packages.
 
 ## Editions and source
 
